@@ -29,18 +29,18 @@ mkdir -p "${TMPDIR}"
 ANTLR4_JAR="antlr-${ANTLR4_VERSION}-complete.jar"
 ANTLR4_ZIP="antlr4-cpp-runtime-${ANTLR4_VERSION}-source.zip"
 ANTLR4_JAR_URL="https://www.antlr.org/download/${ANTLR4_JAR}"
-ANTLR4_ZIP_URL="https://www.antlr.org/download/${ANTRL4_ZIP}"
+ANTLR4_ZIP_URL="https://www.antlr.org/download/${ANTLR4_ZIP}"
 mkdir -p antlr4
 if [ -f "./antlr4/${ANTLR4_JAR}" ] ; then
 	echo "Using existing ./antlr4/${ANTLR4_JAR}"
 else
-	echo "Downloading ./antlr4/${ANTLR4_JAR}"
+	echo "Downloading ${ANTLR4_JAR_URL} as ./antlr4/${ANTLR4_JAR}"
 	curl "${ANTLR4_JAR_URL}" --output "./antlr4/${ANTLR4_JAR}" || exit 1
 fi
 if [ -f "./antlr4/${ANTLR4_ZIP}" ] ; then
 	echo "Using existing ./antlr4/${ANTLR4_ZIP}"
 else
-	echo "Downloading ./antlr4/${ANTLR4_ZIP}"
+	echo "Downloading ${ANTLR4_ZIP_URL} as ./antlr4/${ANTLR4_ZIP}"
 	curl "${ANTLR4_ZIP_URL}" --output "./antlr4/${ANTLR4_ZIP}" || exit 1
 fi
 
