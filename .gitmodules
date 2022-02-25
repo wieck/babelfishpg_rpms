@@ -1,0 +1,6 @@
+[submodule "babelfishpg_engine"]
+	path = babelfishpg_engine
+	url = https://github.com/wieck/babelfishpg_engine.git
+[submodule "babelfishpg_extensions"]
+	path = babelfishpg_extensions
+	url = https://github.com/wieck/babelfishpg_extensions.git

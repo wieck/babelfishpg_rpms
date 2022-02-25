@@ -1,9 +1,12 @@
 # These are macros to be used with find_lang and other stuff
 %global packageversion 130
+%global pgmajorversion 13
 %global pgpackageversion 13
 %global prevmajorversion 12
-%global sname postgresql
-%global pgbaseinstdir	/usr/pgsql-%{pgmajorversion}
+%global babelfishversion 1.1.0
+%global sname babelfishpg
+%global pgname postgresql
+%global pgbaseinstdir	/usr/pgsql-%{pgpackageversion}
 
 %global beta 0
 %{?beta:%global __os_install_post /usr/lib/rpm/brp-compress}
@@ -75,34 +78,33 @@
 %endif
 
 Summary:	PostgreSQL client programs and libraries
-Name:		%{sname}%{pgmajorversion}
+Name:		%{sname}%{pgpackageversion}
 Version:	13.5
-Release:	1PGDG%{?dist}
+Release:	1BABEL%{?dist}
 License:	PostgreSQL
 Url:		https://www.postgresql.org/
 
-Source0:	https://download.postgresql.org/pub/source/v%{version}/postgresql-%{version}.tar.bz2
-Source4:	%{sname}-%{pgmajorversion}-Makefile.regress
-Source5:	%{sname}-%{pgmajorversion}-pg_config.h
-Source6:	%{sname}-%{pgmajorversion}-README-systemd.rpm-dist
-Source7:	%{sname}-%{pgmajorversion}-ecpg_config.h
-Source9:	%{sname}-%{pgmajorversion}-libs.conf
-Source12:	https://www.postgresql.org/files/documentation/pdf/%{pgpackageversion}/%{sname}-%{pgpackageversion}-A4.pdf
-Source14:	%{sname}-%{pgmajorversion}.pam
-Source16:	%{sname}-%{pgmajorversion}-filter-requires-perl-Pg.sh
-Source17:	%{sname}-%{pgmajorversion}-setup
+Source0:	%{sname}%{pgpackageversion}-engine-%{babelfishversion}.tar.bz2
+Source4:	%{pgname}-%{pgmajorversion}-Makefile.regress
+Source5:	%{pgname}-%{pgmajorversion}-pg_config.h
+Source6:	%{pgname}-%{pgmajorversion}-README-systemd.rpm-dist
+Source7:	%{pgname}-%{pgmajorversion}-ecpg_config.h
+Source9:	%{pgname}-%{pgmajorversion}-libs.conf
+Source14:	%{pgname}-%{pgmajorversion}.pam
+Source16:	%{pgname}-%{pgmajorversion}-filter-requires-perl-Pg.sh
+Source17:	%{pgname}-%{pgmajorversion}-setup
 %if %{systemd_enabled}
-Source10:	%{sname}-%{pgmajorversion}-check-db-dir
-Source18:	%{sname}-%{pgmajorversion}.service
-Source19:	%{sname}-%{pgmajorversion}-tmpfiles.d
+Source10:	%{pgname}-%{pgmajorversion}-check-db-dir
+Source18:	%{pgname}-%{pgmajorversion}.service
+Source19:	%{pgname}-%{pgmajorversion}-tmpfiles.d
 %else
-Source3:	%{sname}-%{pgmajorversion}.init
+Source3:	%{pgname}-%{pgmajorversion}.init
 %endif
 
-Patch1:		%{sname}-%{pgmajorversion}-rpm-pgsql.patch
-Patch3:		%{sname}-%{pgmajorversion}-conf.patch
-Patch5:		%{sname}-%{pgmajorversion}-var-run-socket.patch
-Patch6:		%{sname}-%{pgmajorversion}-perl-rpath.patch
+Patch1:		%{pgname}-%{pgmajorversion}-rpm-pgsql.patch
+Patch3:		%{pgname}-%{pgmajorversion}-conf.patch
+Patch5:		%{pgname}-%{pgmajorversion}-var-run-socket.patch
+Patch6:		%{pgname}-%{pgmajorversion}-perl-rpath.patch
 
 BuildRequires:	perl glibc-devel bison flex >= 2.5.31
 BuildRequires:	perl(ExtUtils::MakeMaker)
@@ -572,13 +574,11 @@ benchmarks.
 %global __perl_requires %{SOURCE16}
 
 %prep
-%setup -q -n %{sname}-%{version}
+%setup -q -n %{sname}%{pgmajorversion}-engine-%{babelfishversion}
 %patch1 -p0
 %patch3 -p0
 %patch5 -p0
 %patch6 -p0
-
-%{__cp} -p %{SOURCE12} .
 
 %build
 
@@ -628,6 +628,7 @@ export PYTHON=/usr/bin/python3
 # These configure options must match main build
 ./configure --enable-rpath \
 	--prefix=%{pgbaseinstdir} \
+	--with-extra-version=' Babelfish for PostgreSQL' \
 	--includedir=%{pgbaseinstdir}/include \
 	--mandir=%{pgbaseinstdir}/share/man \
 	--datadir=%{pgbaseinstdir}/share \
@@ -707,6 +708,10 @@ export PYTHON=/usr/bin/python3
 cd src/backend
 MAKELEVEL=0 %{__make} submake-generated-headers
 cd ../..
+
+# manpages and html documentation is prebuilt in official PG tarballs
+# but our "git archive" output doesn't have them.
+MAKELEVEL=0 %{__make} -C doc/src/sgml man html
 
 # Have to hack makefile to put correct path into tutorial scripts
 sed "s|C=\`pwd\`;|C=%{pgbaseinstdir}/lib/tutorial;|" < src/tutorial/Makefile > src/tutorial/GNUmakefile
@@ -803,35 +808,35 @@ sed -e 's|^PGVERSION=.*$|PGVERSION=%{pgmajorversion}|' \
 %{__install} -m 755 postgresql-%{pgmajorversion}-setup %{buildroot}%{pgbaseinstdir}/bin/postgresql-%{pgmajorversion}-setup
 # Create a symlink of the setup script under $PATH
 %{__mkdir} -p %{buildroot}%{_bindir}
-%{__ln_s} %{pgbaseinstdir}/bin/postgresql-%{pgmajorversion}-setup %{buildroot}%{_bindir}/%{sname}-%{pgmajorversion}-setup
+%{__ln_s} %{pgbaseinstdir}/bin/postgresql-%{pgmajorversion}-setup %{buildroot}%{_bindir}/%{pgname}-%{pgmajorversion}-setup
 
 # prep the startup check script, including insertion of some values it needs
 sed -e 's|^PGVERSION=.*$|PGVERSION=%{pgmajorversion}|' \
 	-e 's|^PREVMAJORVERSION=.*$|PREVMAJORVERSION=%{prevmajorversion}|' \
 	-e 's|^PGDOCDIR=.*$|PGDOCDIR=%{_pkgdocdir}|' \
-	<%{SOURCE10} >%{sname}-%{pgmajorversion}-check-db-dir
-touch -r %{SOURCE10} %{sname}-%{pgmajorversion}-check-db-dir
-%{__install} -m 755 %{sname}-%{pgmajorversion}-check-db-dir %{buildroot}%{pgbaseinstdir}/bin/%{sname}-%{pgmajorversion}-check-db-dir
+	<%{SOURCE10} >%{pgname}-%{pgmajorversion}-check-db-dir
+touch -r %{SOURCE10} %{pgname}-%{pgmajorversion}-check-db-dir
+%{__install} -m 755 %{pgname}-%{pgmajorversion}-check-db-dir %{buildroot}%{pgbaseinstdir}/bin/%{pgname}-%{pgmajorversion}-check-db-dir
 
 %{__install} -d %{buildroot}%{_unitdir}
-%{__install} -m 644 %{SOURCE18} %{buildroot}%{_unitdir}/%{sname}-%{pgmajorversion}.service
+%{__install} -m 644 %{SOURCE18} %{buildroot}%{_unitdir}/%{pgname}-%{pgmajorversion}.service
 %else
 %{__install} -d %{buildroot}%{_initrddir}
-sed 's/^PGVERSION=.*$/PGVERSION=%{version}/' <%{SOURCE3} > %{sname}.init
-%{__install} -m 755 %{sname}.init %{buildroot}%{_initrddir}/%{sname}-%{pgmajorversion}
+sed 's/^PGVERSION=.*$/PGVERSION=%{version}/' <%{SOURCE3} > %{pgname}.init
+%{__install} -m 755 %{pgname}.init %{buildroot}%{_initrddir}/%{pgname}-%{pgmajorversion}
 %endif
 
 %if %pam
 %{__install} -d %{buildroot}/etc/pam.d
-%{__install} -m 644 %{SOURCE14} %{buildroot}/etc/pam.d/%{sname}
+%{__install} -m 644 %{SOURCE14} %{buildroot}/etc/pam.d/%{pgname}
 %endif
 
 # Create the directory for sockets.
-%{__install} -d -m 755 %{buildroot}/var/run/%{sname}
+%{__install} -d -m 755 %{buildroot}/var/run/%{pgname}
 %if %{systemd_enabled}
 # ... and make a tmpfiles script to recreate it at reboot.
 %{__mkdir} -p %{buildroot}/%{_tmpfilesdir}
-%{__install} -m 0644 %{SOURCE19} %{buildroot}/%{_tmpfilesdir}/%{sname}-%{pgmajorversion}.conf
+%{__install} -m 0644 %{SOURCE19} %{buildroot}/%{_tmpfilesdir}/%{pgname}-%{pgmajorversion}.conf
 %endif
 
 # PGDATA needs removal of group and world permissions due to pg_pwd hole.
@@ -949,10 +954,10 @@ if [ $1 -eq 1 ] ; then
    %service_add_pre postgresql-%{pgpackageversion}.service
    %endif
    %else
-   %systemd_post %{sname}-%{pgpackageversion}.service
+   %systemd_post %{pgname}-%{pgpackageversion}.service
    %endif
   %else
-   chkconfig --add %{sname}-%{pgpackageversion}
+   chkconfig --add %{pgname}-%{pgpackageversion}
   %endif
 fi
 
@@ -973,11 +978,11 @@ chmod 700 /var/lib/pgsql/.bash_profile
 if [ $1 -eq 0 ] ; then
 %if %{systemd_enabled}
 	# Package removal, not upgrade
-	/bin/systemctl --no-reload disable %{sname}-%{pgmajorversion}.service >/dev/null 2>&1 || :
-	/bin/systemctl stop %{sname}-%{pgmajorversion}.service >/dev/null 2>&1 || :
+	/bin/systemctl --no-reload disable %{pgname}-%{pgmajorversion}.service >/dev/null 2>&1 || :
+	/bin/systemctl stop %{pgname}-%{pgmajorversion}.service >/dev/null 2>&1 || :
 %else
-	/sbin/service %{sname}-%{pgmajorversion} condstop >/dev/null 2>&1
-	chkconfig --del %{sname}-%{pgmajorversion}
+	/sbin/service %{pgname}-%{pgmajorversion} condstop >/dev/null 2>&1
+	chkconfig --del %{pgname}-%{pgmajorversion}
 
 %endif
 fi
@@ -987,14 +992,14 @@ fi
 %if %{systemd_enabled}
  /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 %else
- /sbin/service %{sname}-%{pgmajorversion} condrestart >/dev/null 2>&1
+ /sbin/service %{pgname}-%{pgmajorversion} condrestart >/dev/null 2>&1
 %endif
 if [ $1 -ge 1 ] ; then
  %if %{systemd_enabled}
 	# Package upgrade, not uninstall
-	/bin/systemctl try-restart %{sname}-%{pgmajorversion}.service >/dev/null 2>&1 || :
+	/bin/systemctl try-restart %{pgname}-%{pgmajorversion}.service >/dev/null 2>&1 || :
  %else
-   /sbin/service %{sname}-%{pgmajorversion} condrestart >/dev/null 2>&1
+   /sbin/service %{pgname}-%{pgmajorversion} condrestart >/dev/null 2>&1
  %endif
 fi
 
@@ -1026,7 +1031,7 @@ fi
 %{_sbindir}/update-alternatives --install %{_mandir}/man1/vacuumdb.1 pgsql-vacuumdbman %{pgbaseinstdir}/share/man/man1/vacuumdb.1 %{packageversion}0
 
 %post libs
-%{_sbindir}/update-alternatives --install /etc/ld.so.conf.d/%{sname}-pgdg-libs.conf pgsql-ld-conf %{pgbaseinstdir}/share/%{sname}-%{pgmajorversion}-libs.conf %{packageversion}0
+%{_sbindir}/update-alternatives --install /etc/ld.so.conf.d/%{pgname}-pgdg-libs.conf pgsql-ld-conf %{pgbaseinstdir}/share/%{pgname}-%{pgmajorversion}-libs.conf %{packageversion}0
 /sbin/ldconfig
 
 # Drop alternatives entries for common binaries and man files
@@ -1063,7 +1068,7 @@ if [ "$1" -eq 0 ]
 %postun libs
 if [ "$1" -eq 0 ]
   then
-	%{_sbindir}/update-alternatives --remove pgsql-ld-conf		%{pgbaseinstdir}/share/%{sname}-%{pgmajorversion}-libs.conf
+	%{_sbindir}/update-alternatives --remove pgsql-ld-conf		%{pgbaseinstdir}/share/%{pgname}-%{pgmajorversion}-libs.conf
 	/sbin/ldconfig
 fi
 
@@ -1121,7 +1126,6 @@ fi
 %files docs
 %defattr(-,root,root)
 %doc doc/src/*
-%doc *-A4.pdf
 %doc src/tutorial
 %doc doc/html
 
@@ -1259,21 +1263,21 @@ fi
 %{pgbaseinstdir}/lib/libpgtypes.so.*
 %{pgbaseinstdir}/lib/libecpg_compat.so.*
 %{pgbaseinstdir}/lib/libpqwalreceiver.so
-%config(noreplace) %attr (644,root,root) %{pgbaseinstdir}/share/%{sname}-%{pgmajorversion}-libs.conf
+%config(noreplace) %attr (644,root,root) %{pgbaseinstdir}/share/%{pgname}-%{pgmajorversion}-libs.conf
 
 %files server -f pg_server.lst
 %defattr(-,root,root)
 %if %{systemd_enabled}
-%{pgbaseinstdir}/bin/%{sname}-%{pgmajorversion}-setup
-%{_bindir}/%{sname}-%{pgmajorversion}-setup
-%{pgbaseinstdir}/bin/%{sname}-%{pgmajorversion}-check-db-dir
-%{_tmpfilesdir}/%{sname}-%{pgmajorversion}.conf
-%{_unitdir}/%{sname}-%{pgmajorversion}.service
+%{pgbaseinstdir}/bin/%{pgname}-%{pgmajorversion}-setup
+%{_bindir}/%{pgname}-%{pgmajorversion}-setup
+%{pgbaseinstdir}/bin/%{pgname}-%{pgmajorversion}-check-db-dir
+%{_tmpfilesdir}/%{pgname}-%{pgmajorversion}.conf
+%{_unitdir}/%{pgname}-%{pgmajorversion}.service
 %else
-%config(noreplace) %{_initrddir}/%{sname}-%{pgmajorversion}
+%config(noreplace) %{_initrddir}/%{pgname}-%{pgmajorversion}
 %endif
 %if %pam
-%config(noreplace) /etc/pam.d/%{sname}
+%config(noreplace) /etc/pam.d/%{pgname}
 %endif
 %attr (755,root,root) %dir /etc/sysconfig/pgsql
 %{pgbaseinstdir}/bin/initdb
@@ -1329,7 +1333,7 @@ fi
 %attr(700,postgres,postgres) %dir /var/lib/pgsql/%{pgmajorversion}
 %attr(700,postgres,postgres) %dir /var/lib/pgsql/%{pgmajorversion}/data
 %attr(700,postgres,postgres) %dir /var/lib/pgsql/%{pgmajorversion}/backups
-%attr(755,postgres,postgres) %dir /var/run/%{sname}
+%attr(755,postgres,postgres) %dir /var/run/%{pgname}
 %{pgbaseinstdir}/lib/*_and_*.so
 %{pgbaseinstdir}/share/information_schema.sql
 %{pgbaseinstdir}/share/snowball_create.sql
