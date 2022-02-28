@@ -121,7 +121,7 @@ The build script will perform the following actions:
 
 The entire process can take considerable time. For example using a
 CentOS-8-Stream VM with 4 VCPUs and 16GB memory on top of NVMe takes
-about one hour.
+about 27 minutes.
 
 The end result should look similar to this:
 ```
