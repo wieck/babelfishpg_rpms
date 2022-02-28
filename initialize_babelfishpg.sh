@@ -34,6 +34,6 @@ CREATE DATABASE babelfish OWNER babelfish;
 CREATE EXTENSION babelfishpg_tds CASCADE;
 CALL sys.initialize_babelfish('babelfish');
 \q
+_EOF_
 
 pg_ctl stop
-_EOF_
