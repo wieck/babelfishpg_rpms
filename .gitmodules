@@ -1,6 +1,6 @@
 [submodule "babelfishpg_engine"]
 	path = babelfishpg_engine
-	url = https://github.com/wieck/babelfishpg_engine.git
+	url = https://github.com/babelfish-for-postgresql/postgresql_modified_for_babelfish.git
 [submodule "babelfishpg_extensions"]
 	path = babelfishpg_extensions
-	url = https://github.com/wieck/babelfishpg_extensions.git
+	url = https://github.com/babelfish-for-postgresql/babelfish_extensions.git

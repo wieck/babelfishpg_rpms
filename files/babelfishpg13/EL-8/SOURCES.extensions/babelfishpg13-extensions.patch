@@ -1,0 +1,12 @@
+diff --git a/contrib/babelfishpg_tsql/Makefile b/contrib/babelfishpg_tsql/Makefile
+index 9efd628..128a9dd 100644
+--- a/contrib/babelfishpg_tsql/Makefile
++++ b/contrib/babelfishpg_tsql/Makefile
+@@ -75,6 +75,7 @@ PG_CXXFLAGS += -Wno-register # otherwise C++17 gags on PostgreSQL headers
+ PG_CXXFLAGS += -I$(ANTLR4_RUNTIME_INCLUDE_DIR)
+ PG_CFLAGS += -g
+ PG_CPPFLAGS += -I$(TSQLSRC) -I$(PG_SRC) -DFAULT_INJECTOR
++PG_CPPFLAGS += -I/usr/local/include/antlr4-runtime
+ 
+ SHLIB_LINK += -L$(ANTLR4_RUNTIME_LIB_DIR) $(ANTLR4_RUNTIME_LIB) -lcrypto
+ 

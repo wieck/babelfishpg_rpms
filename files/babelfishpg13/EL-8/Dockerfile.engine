@@ -3,7 +3,7 @@
 #
 # We build this on CentOS-Stream 8 for now ... should switch to Rocky
 # ----
-FROM rockylinux:8
+FROM rockylinux:8.5
 
 # Build arguments passed from the build script
 ARG CFGDIR
@@ -16,7 +16,7 @@ ENV RPM_BUILD_NCPUS=16
 
 # Add the EPEL and PGDG RPM repositories
 RUN dnf install -y epel-release
-RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm
 
 # Install all build dependencies
 RUN dnf install -y \
@@ -53,9 +53,9 @@ RUN dnf install -y \
 
 # Copy RPM spec and SOURCES
 COPY "./tmp/$BABELFISH_ENG_PREFIX.tar.bz2" /root/rpmbuild/SOURCES/
-COPY "$CFGDIR/SOURCES/" /root/rpmbuild/SOURCES
-COPY "$CFGDIR/babelfishpg13.spec" /root/
+COPY "$CFGDIR/SOURCES.engine/" /root/rpmbuild/SOURCES
+COPY "$CFGDIR/babelfishpg13-engine.spec" /root/
 
 # Run rpmbuild
 RUN	cd /root \
-	&& rpmbuild -bb babelfishpg13.spec
+	&& rpmbuild -bb babelfishpg13-engine.spec

@@ -4,6 +4,7 @@
 %global pgpackageversion 13
 %global prevmajorversion 12
 %global babelfishversion 1.1.0
+%global pgversion 13.5
 %global sname babelfishpg
 %global pgname postgresql
 %global pgbaseinstdir	/usr/pgsql-%{pgpackageversion}
@@ -55,6 +56,9 @@
  %{!?sdt:%global sdt 1}
 %endif
 
+# Turn off LLVM for Babelfish
+# LLVM itself crashes when building babelfishpg_tsql
+%if 0
 %ifarch ppc64 ppc64le s390 s390x armv7hl
 %if 0%{?rhel} && 0%{?rhel} == 7
 %{!?llvm:%global llvm 0}
@@ -63,6 +67,9 @@
 %endif
 %else
 %{!?llvm:%global llvm 1}
+%endif
+%else
+%{!?llvm:%global llvm 0}
 %endif
 
 %{!?selinux:%global selinux 1}
@@ -79,12 +86,12 @@
 
 Summary:	PostgreSQL client programs and libraries
 Name:		%{sname}%{pgpackageversion}
-Version:	13.5
+Version:	%{babelfishversion}
 Release:	1BABEL%{?dist}
 License:	PostgreSQL
 Url:		https://www.postgresql.org/
 
-Source0:	%{sname}%{pgpackageversion}-engine-%{babelfishversion}.tar.bz2
+Source0:	%{sname}-engine-%{babelfishversion}-PG-%{pgversion}.tar.bz2
 Source4:	%{pgname}-%{pgmajorversion}-Makefile.regress
 Source5:	%{pgname}-%{pgmajorversion}-pg_config.h
 Source6:	%{pgname}-%{pgmajorversion}-README-systemd.rpm-dist
@@ -574,7 +581,7 @@ benchmarks.
 %global __perl_requires %{SOURCE16}
 
 %prep
-%setup -q -n %{sname}%{pgmajorversion}-engine-%{babelfishversion}
+%setup -q -n %{sname}-engine-%{babelfishversion}-PG-%{pgversion}
 %patch1 -p0
 %patch3 -p0
 %patch5 -p0

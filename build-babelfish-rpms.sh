@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# ----
+# build-babelfish-rpms.sh
+#
+#	Shell script to build the Babelfish for PostgreSQL RPM files
+#	inside of podman containers.
+# ----
+
 if [ $# -ne 1 ] ; then
     echo "usage: $(basename $0) CONFIGFILE" >&2
 	echo "" >&2
@@ -65,15 +72,34 @@ bzip2 "${BABELFISH_EXT_PREFIX}.tar" || exit 1
 cd "${CURDIR}"
 
 # Now it is time to actually run the rpmbuild inside a docker image build.
-podman build -t babelfishpg-rpmbuild -f "${DOCKERFILE_ENG}" \
+podman build -t babelfishpg-eng-rpmbuild -f "${DOCKERFILE_ENG}" \
 	--build-arg CFGDIR="${CFGDIR}" \
 	--build-arg BABELFISH_ENG_PREFIX="${BABELFISH_ENG_PREFIX}" \
-	. 2>&1 | tee podman-build-engine.log || exit 1
+	. 2>&1 | tee podman-build-engine.log
 
-# Finally create a container and extract the RPM files.
+# Create a container with that image and extract the Babelfish
+# Engine RPMs from that. 
 echo "Extracing RPM files"
 mkdir RPMS || exit 1
-id=$(podman create localhost/babelfishpg-rpmbuild)
-podman cp "${id}:/root/rpmbuild/RPMS/." ./RPMS/
+id=$(podman create localhost/babelfishpg-eng-rpmbuild) || exit
+podman cp "${id}:/root/rpmbuild/RPMS/." ./RPMS/ || exit
 podman rm "${id}"
+
+# Run rpmbuild for the Babelfish Extension RPMs in another image build
+podman build -t babelfishpg-ext-rpmbuild -f "${DOCKERFILE_EXT}" \
+	--build-arg CFGDIR="${CFGDIR}" \
+	--build-arg BABELFISH_ENG_PREFIX="${BABELFISH_ENG_PREFIX}" \
+	--build-arg BABELFISH_EXT_PREFIX="${BABELFISH_EXT_PREFIX}" \
+	--build-arg ANTLR4_JAR="${ANTLR4_JAR}" \
+	--build-arg ANTLR4_ZIP="${ANTLR4_ZIP}" \
+	. 2>&1 | tee podman-build-extensions.log
+
+# Create a container with that and extract the extensions RPMS
+echo "Extracing RPM files"
+mkdir -p RPMS || exit 1
+id=$(podman create localhost/babelfishpg-ext-rpmbuild) || exit 1
+podman cp "${id}:/root/rpmbuild/RPMS/." ./RPMS/ || exit 1
+podman rm "${id}"
+echo ""
+echo "RPMs built:"
 ls -lhR --color=auto RPMS
