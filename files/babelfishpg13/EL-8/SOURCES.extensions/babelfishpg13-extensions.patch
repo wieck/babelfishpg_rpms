@@ -1,3 +1,34 @@
+diff --git a/contrib/babelfishpg_money/Makefile b/contrib/babelfishpg_money/Makefile
+index 2dcd692..259155e 100755
+--- a/contrib/babelfishpg_money/Makefile
++++ b/contrib/babelfishpg_money/Makefile
+@@ -14,8 +14,8 @@ CFLAGS = `$(PG_CONFIG) --includedir-server`
+
+ TESTS = $(wildcard test/sql/*.sql)
+
+-REGRESS_BRIN := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL 9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]" && echo brin-xl)
+-REGRESS_BRIN += $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -E "9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]" | grep -qEv "XL" && echo brin)
++REGRESS_BRIN := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL 9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" && echo brin-xl)
++REGRESS_BRIN += $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -E "9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" | grep -qEv "XL" && echo brin)
+ REGRESS_VERSION_SPECIFIC := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL" && echo index-xl || echo index)
+ REGRESS = $(shell echo aggregate cast comparison overflow $(REGRESS_BRIN) $(REGRESS_VERSION_SPECIFIC))
+
+@@ -28,12 +28,12 @@ include $(PGXS)
+ AGGSTATESQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL" && echo fixeddecimalaggstate.sql)
+ AGGFUNCSSQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL" && echo fixeddecimal--xlaggs.sql)
+
+-AGGFUNCSSQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "9\.[6-9]| 10\.[0-9]| 11\.[0-9]| 12\.[0-9]" && echo fixeddecimal--parallelaggs.sql || echo fixeddecimal--aggs.sql)
++AGGFUNCSSQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "9\.[6-9]| 10\.[0-9]| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" && echo fixeddecimal--parallelaggs.sql || echo fixeddecimal--aggs.sql)
+
+-BRINSQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "9\.[5-9]| 10\.[0-9]| 11\.[0-9]| 12\.[0-9]" && echo fixeddecimal--brin.sql)
++BRINSQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "9\.[5-9]| 10\.[0-9]| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" && echo fixeddecimal--brin.sql)
+
+ # 9.6 was the dawn of parallel query, so we'll use the parallel enabled .sql file from then on.
+-BASESQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "9\.[6-9]| 10\.[0-9]| 11\.[0-9]| 12\.[0-9]" && echo fixeddecimal--1.1.0_base_parallel.sql || echo fixeddecimal--1.1.0_base.sql)
++BASESQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "9\.[6-9]| 10\.[0-9]| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" && echo fixeddecimal--1.1.0_base_parallel.sql || echo fixeddecimal--1.1.0_base.sql)
+
+ OBJECTS := $(addprefix $(srcdir)/, $(AGGSTATESQL) $(BASESQL) $(AGGFUNCSSQL) $(BRINSQL))
+
 diff --git a/contrib/babelfishpg_tsql/Makefile b/contrib/babelfishpg_tsql/Makefile
 index 9efd628..128a9dd 100644
 --- a/contrib/babelfishpg_tsql/Makefile
@@ -7,6 +38,6 @@ index 9efd628..128a9dd 100644
  PG_CFLAGS += -g
  PG_CPPFLAGS += -I$(TSQLSRC) -I$(PG_SRC) -DFAULT_INJECTOR
 +PG_CPPFLAGS += -I/usr/local/include/antlr4-runtime
- 
+
  SHLIB_LINK += -L$(ANTLR4_RUNTIME_LIB_DIR) $(ANTLR4_RUNTIME_LIB) -lcrypto
- 
+
