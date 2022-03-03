@@ -15,8 +15,14 @@ ENV HOME=/root
 ENV RPM_BUILD_NCPUS=16
 
 # Add the EPEL and PGDG RPM repositories
-RUN dnf install -y epel-release
-RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm
+# For some reason the GPG files of the PGDG repository
+# are not found on aarch64.
+RUN dnf install -y epel-release && \
+	dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm && \
+	if [ "$(uname -m)" = "aarch64" ] ; then \
+		echo "Turning off gpgcheck for PGDG repositories" && \
+		sed -i -e 's/^gpgcheck.*/gpgcheck = 0/' -e 's/^repo_gpgcheck.*/repo_gpgcheck = 0/' /etc/yum.repos.d/pgdg-redhat-all.repo ; \
+	fi
 
 # Install all build dependencies
 RUN dnf install -y \
