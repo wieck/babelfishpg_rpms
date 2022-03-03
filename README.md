@@ -269,7 +269,7 @@ cat >/$PGDATA/postgresql.auto.conf <<_EOF_
 listen_addresses = '*'
 shared_preload_libraries = 'babelfishpg_tds'
 babelfishpg_tsql.database_name = 'babelfish'
-babelfishpg_tsql.migration_mode = 'single-db'
+babelfishpg_tsql.migration_mode = 'multi-db'
 _EOF_
 
 echo "Adding private networks to $PGDATA/pg_hba.conf"
