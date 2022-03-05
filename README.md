@@ -324,10 +324,11 @@ At this point we want to see if our **Babelfish for PostgreSQL**
 installation is speaking TDS protocol on port 1433/TCP. For that we
 need some sort of native SQL-Server client program.
 
-I am just going to use *SQLCMD* for that. How to get the **mssql-tools**
-onto a Linux machine using docker/podman is a different story that again
-is beyond the scope of this document. The relevant, official repo files
-by Microsoft can be found [here](https://packages.microsoft.com/config/rhel/8).
+I am just going to use *SQLCMD* for that. Note that you will need version
+17 or *mssql-tools* and *msodbcsql*. The current version 18 will refuse
+to connect as Babelfish currently does not support encryption of the TDS
+Login handshake. The installation procedure for that is documented
+[here](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15#17).
 ```
 $ sqlcmd -S pghost -U babelfish -P babel2
 1> select version();
