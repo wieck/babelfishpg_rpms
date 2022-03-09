@@ -4,7 +4,7 @@
 %global pgpackageversion 13
 %global prevmajorversion 12
 %global babelfishversion 1.1.0
-%global pgversion 13.5
+%global pgversion 13.6
 %global sname babelfishpg
 %global pgname postgresql
 %global pgbaseinstdir	/usr/pgsql-%{pgpackageversion}
