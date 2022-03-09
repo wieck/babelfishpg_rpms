@@ -52,8 +52,12 @@ else
 fi
 
 # Create the source tarball for the Babelfish Engine
-echo "Creating Babelfish Engine tarball"
 cd "${BABELFISH_ENG_REPO}" || exit 1
+STASHID=$(git stash create)
+if [ "$STASHID" != "" ] ; then
+	BABELFISH_ENG_TAG=$STASHID
+fi
+echo "Creating Babelfish Engine tarball at $BABELFISH_ENG_TAG"
 git archive --format=tar --prefix="${BABELFISH_ENG_PREFIX}/" \
 	--output="${CURDIR}/tmp/${BABELFISH_ENG_PREFIX}.tar" \
 	"${BABELFISH_ENG_TAG}" || exit 1
@@ -62,8 +66,12 @@ bzip2 "${BABELFISH_ENG_PREFIX}.tar" || exit 1
 cd "${CURDIR}"
 
 # Create the source tarball for the Babelfish Engine
-echo "Creating Babelfish Extensions tarball"
 cd "${BABELFISH_EXT_REPO}" || exit 1
+STASHID=$(git stash create)
+if [ "$STASHID" != "" ] ; then
+	BABELFISH_EXT_TAG=$STASHID
+fi
+echo "Creating Babelfish Extensions tarball at $BABELFISH_EXT_TAG"
 git archive --format=tar --prefix="${BABELFISH_EXT_PREFIX}/" \
 	--output="${CURDIR}/tmp/${BABELFISH_EXT_PREFIX}.tar" \
 	"${BABELFISH_EXT_TAG}" || exit 1
