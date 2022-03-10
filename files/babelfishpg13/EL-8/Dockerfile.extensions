@@ -8,7 +8,6 @@ FROM rockylinux:8.5
 # Build arguments passed from the build script
 ARG CFGDIR
 ARG BABELFISH_ENG_PREFIX
-ARG BABELFISH_EXT_PREFIX
 ARG ANTLR4_JAR
 ARG ANTLR4_ZIP
 
@@ -74,13 +73,6 @@ RUN cd /root/antlr4 && \
 	make && \
 	make install
 
-# Copy RPM spec and SOURCES
-COPY "./tmp/$BABELFISH_ENG_PREFIX.tar.bz2" /root/tmp/
-COPY "./tmp/$BABELFISH_EXT_PREFIX.tar.bz2" /root/rpmbuild/SOURCES/
-COPY "$CFGDIR/SOURCES.extensions/" /root/rpmbuild/SOURCES
-COPY "$CFGDIR/SOURCES.engine/" /root/tmp/SOURCES/
-COPY "$CFGDIR/babelfishpg13-extensions.spec" /root/
-
 # Install the Babelfish Engine from the RPMs that we built
 COPY "./RPMS/" /root/tmp/RPMS/
 RUN cd /root/tmp/RPMS/$(uname -m) && \
@@ -89,11 +81,11 @@ RUN cd /root/tmp/RPMS/$(uname -m) && \
 	rpm -ivh babelfishpg13-server-1.1.0-1BABEL.el8.$(uname -m).rpm && \
 	rpm -ivh babelfishpg13-devel-1.1.0-1BABEL.el8.$(uname -m).rpm
 
-
-# Unpack the Babelfish Engine tarball.
-# TODO: apply the same patches that the rpmbuild for the engine did
-RUN cd /root/tmp && \
-	tar -xojf $BABELFISH_ENG_PREFIX.tar.bz2
+# Copy RPM spec and SOURCES
+COPY "./tmp/$BABELFISH_ENG_PREFIX.tar.bz2" /root/rpmbuild/SOURCES/
+COPY "$CFGDIR/SOURCES.extensions/" /root/rpmbuild/SOURCES/
+COPY "$CFGDIR/SOURCES.engine/" /root/rpmbuild/SOURCES/
+COPY "$CFGDIR/babelfishpg13-extensions.spec" /root/
 
 # Run rpmbuild
 RUN	cd /root && \
