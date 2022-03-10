@@ -2,3 +2,4 @@ antlr4
 tmp
 RPMS
 *.log
+.*.swp
