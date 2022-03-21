@@ -29,11 +29,26 @@ index 2dcd692..259155e 100755
 
  OBJECTS := $(addprefix $(srcdir)/, $(AGGSTATESQL) $(BASESQL) $(AGGFUNCSSQL) $(BRINSQL))
 
+diff --git a/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c b/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c
+index f114f07..becc6a0 100644
+--- a/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c
++++ b/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c
+@@ -1658,6 +1658,10 @@ ReadParameters(TDSRequestSP request, uint64_t offset, StringInfo message, int *p
+ 				uint8_t scale = message->data[offset++];
+ 				temp->len = message->data[offset++];
+
++				/* PostgreSQL's timestamp is limited to scale 6 */
++				if (scale != 255 && scale > 6)
++					scale = 6;
++
+ 				if (temp->len == 0)
+ 					temp->isNull = true;
+
 diff --git a/contrib/babelfishpg_tsql/Makefile b/contrib/babelfishpg_tsql/Makefile
-index 9efd628..128a9dd 100644
+index 0534345..64eea28 100644
 --- a/contrib/babelfishpg_tsql/Makefile
 +++ b/contrib/babelfishpg_tsql/Makefile
-@@ -75,6 +75,7 @@ PG_CXXFLAGS += -Wno-register # otherwise C++17 gags on PostgreSQL headers
+@@ -77,6 +77,7 @@ PG_CXXFLAGS += -Wno-register # otherwise C++17 gags on PostgreSQL headers
  PG_CXXFLAGS += -I$(ANTLR4_RUNTIME_INCLUDE_DIR)
  PG_CFLAGS += -g
  PG_CPPFLAGS += -I$(TSQLSRC) -I$(PG_SRC) -DFAULT_INJECTOR
@@ -41,3 +56,15 @@ index 9efd628..128a9dd 100644
 
  SHLIB_LINK += -L$(ANTLR4_RUNTIME_LIB_DIR) $(ANTLR4_RUNTIME_LIB) -lcrypto
 
+diff --git a/contrib/babelfishpg_tsql/src/pl_funcs-2.c b/contrib/babelfishpg_tsql/src/pl_funcs-2.c
+index c2366f8..9cdb108 100644
+--- a/contrib/babelfishpg_tsql/src/pl_funcs-2.c
++++ b/contrib/babelfishpg_tsql/src/pl_funcs-2.c
+@@ -317,6 +317,7 @@ pre_function_call_hook_impl(const char *funcName)
+ 			(*pltsql_instr_plugin_ptr)->pltsql_instr_increment_func_metric(metricName.data);
+ 		}
+ 	}
++	pfree(metricName.data);
+ }
+
+ /***********************************************************************************
