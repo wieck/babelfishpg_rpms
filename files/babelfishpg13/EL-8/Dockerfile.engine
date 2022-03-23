@@ -8,6 +8,8 @@ FROM rockylinux:8.5
 # Build arguments passed from the build script
 ARG CFGDIR
 ARG BABELFISH_ENG_PREFIX
+ARG ANTLR4_JAR
+ARG ANTLR4_ZIP
 
 # Adjust NCPUS to what your max. Note that values above 16
 # don't work without modifying rpmmacros
@@ -28,11 +30,13 @@ RUN dnf install -y epel-release && \
 RUN dnf install -y \
 	bison \
 	clang-devel \
+	cmake \
 	e2fsprogs-devel \
 	flex \
 	gettext \
 	git \
 	glibc-devel \
+	java-1.8.0-openjdk-devel \
 	krb5-devel \
 	libicu-devel \
 	libselinux-devel \
@@ -55,7 +59,19 @@ RUN dnf install -y \
 	systemd-devel \
 	systemtap-sdt-devel \
 	tcl-devel \
+	unzip \
 	zlib-devel
+
+# Install Antlr4 Runtime
+COPY antlr4/$ANTLR4_JAR /root/antlr4/$ANTLR4_JAR
+COPY antlr4/$ANTLR4_ZIP /root/antlr4/
+RUN cd /root/antlr4 && \
+	unzip -d antlr4-complete $ANTLR4_ZIP && \
+	mkdir -p antlr4-complete/build && \
+	cd antlr4-complete/build && \
+	cmake .. -DANTLR_JAR_LOCATION=/root/antlr4/$ANTLR4_JAR -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_DEMO=True && \
+	make && \
+	make install
 
 # Copy RPM spec and SOURCES
 COPY "./tmp/$BABELFISH_ENG_PREFIX.tar.bz2" /root/rpmbuild/SOURCES/

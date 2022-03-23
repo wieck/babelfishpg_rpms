@@ -1,0 +1,35 @@
+diff --git a/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c b/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c
+index fe85a1a410..05d931a9b4 100644
+--- a/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c
++++ b/contrib/babelfishpg_tds/src/backend/tds/tdsrpc.c
+@@ -1658,6 +1658,10 @@ ReadParameters(TDSRequestSP request, uint64_t offset, StringInfo message, int *p
+ 				uint8_t scale = message->data[offset++];
+ 				temp->len = message->data[offset++];
+ 
++				/* PostgreSQL's timestamp is limited to scale 6 */
++				if (scale != 255 && scale > 6)
++					scale = 6;
++
+ 				if (temp->len == 0)
+ 					temp->isNull = true;
+ 
+diff --git a/contrib/babelfishpg_tsql/src/pl_funcs-2.c b/contrib/babelfishpg_tsql/src/pl_funcs-2.c
+index ffffb2f108..da4a532a99 100644
+--- a/contrib/babelfishpg_tsql/src/pl_funcs-2.c
++++ b/contrib/babelfishpg_tsql/src/pl_funcs-2.c
+@@ -282,6 +282,7 @@ pre_function_call_hook_impl(const char *funcName)
+ 		if (!(*pltsql_instr_plugin_ptr)->pltsql_instr_increment_func_metric(metricName))
+ 		{
+ 			/* check with "unsupported" in prefix */
++			pfree(metricName);
+ 			prefix = "instr_unsupported_tsql_";
+ 			metricName = palloc(strlen(prefix) + strlen(funcname_edited) + 1);
+ 
+@@ -290,6 +291,7 @@ pre_function_call_hook_impl(const char *funcName)
+ 			(*pltsql_instr_plugin_ptr)->pltsql_instr_increment_func_metric(metricName);
+ 		}
+ 	}
++	pfree(metricName);
+ }
+ 
+ /***********************************************************************************

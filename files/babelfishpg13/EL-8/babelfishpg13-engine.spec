@@ -4,7 +4,7 @@
 %global pgpackageversion 13
 %global prevmajorversion 12
 %global babelfishversion 1.1.0
-%global pgversion 13.6
+%global pgversion 13.5
 %global sname babelfishpg
 %global pgname postgresql
 %global pgbaseinstdir	/usr/pgsql-%{pgpackageversion}
@@ -112,6 +112,9 @@ Patch1:		%{pgname}-%{pgmajorversion}-rpm-pgsql.patch
 Patch3:		%{pgname}-%{pgmajorversion}-conf.patch
 Patch5:		%{pgname}-%{pgmajorversion}-var-run-socket.patch
 Patch6:		%{pgname}-%{pgmajorversion}-perl-rpath.patch
+
+Patch42:	%{sname}%{pgmajorversion}-extensions.patch
+Patch43:	%{sname}%{pgmajorversion}-makefiles.patch
 
 BuildRequires:	perl glibc-devel bison flex >= 2.5.31
 BuildRequires:	perl(ExtUtils::MakeMaker)
@@ -383,6 +386,24 @@ Requires:	advance-toolchain-%{atstring}-runtime
 The postgresql%{pgmajorversion}-contrib package contains various extension modules that are
 included in the PostgreSQL distribution.
 
+%package babelextensions
+Summary:	Babelfish for PostgreSQL Extension Modules
+Requires:	%{name}%{?_isa} = %{version}-%{release}
+Requires:	%{name}-libs%{?_isa} = %{version}-%{release}
+Requires:	%{name}-server%{?_isa} = %{version}-%{release}
+Provides:	postgresql-babelextensions >= %{version}-%{release}
+
+%if 0%{?rhel} && 0%{?rhel} == 7
+%ifarch ppc64 ppc64le
+AutoReq:	0
+Requires:	advance-toolchain-%{atstring}-runtime
+%endif
+%endif
+
+%description babelextensions
+The postgresql%{pgmajorversion}-babelextensions package contains the
+Babelfish for PostgreSQL parts that are in loadable extension modules.
+
 %package devel
 Summary:	PostgreSQL development header files and libraries
 Requires:	%{name}%{?_isa} = %{version}-%{release}
@@ -587,6 +608,9 @@ benchmarks.
 %patch5 -p0
 %patch6 -p0
 
+%patch42 -p1
+%patch43 -p1
+
 %build
 
 # fail quickly and obviously if user tries to build as root
@@ -727,7 +751,7 @@ sed "s|C=\`pwd\`;|C=%{pgbaseinstdir}/lib/tutorial;|" < src/tutorial/Makefile > s
 
 %{__mkdir} -p %{buildroot}%{pgbaseinstdir}/share/extensions/
 MAKELEVEL=0 %{__make} %{?_smp_mflags} all
-%{__make} %{?_smp_mflags} -C contrib all
+%{__make} %{?_smp_mflags} -j1 -C contrib all
 %if %uuid
 %{__make} %{?_smp_mflags} -C contrib/uuid-ossp all
 %endif
@@ -789,6 +813,9 @@ run_testsuite()
 %if %uuid
 %{__make} -C contrib/uuid-ossp DESTDIR=%{buildroot} install
 %endif
+
+# Copy the ANTLR C++ runtime libraries into the PG lib directory
+%{__cp} /usr/local/lib/libantlr4* %{buildroot}%{pgbaseinstdir}/lib/
 
 # multilib header hack; note pg_config.h is installed in two places!
 # we only apply this to known Red Hat multilib arches, per bug #177564
@@ -1261,6 +1288,13 @@ fi
 %{pgbaseinstdir}/share/man/man1/pg_recvlogical.1
 %{pgbaseinstdir}/share/man/man1/pg_standby.1
 %{pgbaseinstdir}/share/man/man1/vacuumlo.1
+
+%files babelextensions
+%defattr(-,root,root)
+%{pgbaseinstdir}/lib/libantlr4*
+%{pgbaseinstdir}/lib/babelfishpg*
+%{pgbaseinstdir}/share/extension/babelfishpg*
+%{pgbaseinstdir}/share/extension/fixeddecimal--1.0.0--1.1.0.sql
 
 %files libs -f pg_libpq5.lst
 %defattr(-,root,root)

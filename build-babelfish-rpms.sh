@@ -4,7 +4,7 @@
 # build-babelfish-rpms.sh
 #
 #	Shell script to build the Babelfish for PostgreSQL RPM files
-#	inside of podman containers.
+#	inside of a podman container.
 # ----
 
 if [ $# -ne 1 ] ; then
@@ -21,11 +21,7 @@ TMPDIR="$(pwd)/tmp"
 CFGDIR="$(dirname $1)"
 
 # Include the config file
-source $1
-
-# Location of the local git clone of repositories
-BABELFISH_ENG_REPO="./babelfishpg_engine"
-BABELFISH_EXT_REPO="./babelfishpg_extensions"
+source $1 || exit 1
 
 # Cleanup from previous builds
 rm -rf RPMS
@@ -63,57 +59,24 @@ git archive --format=tar --prefix="${BABELFISH_ENG_PREFIX}/" \
 	"${BABELFISH_ENG_TAG}" || exit 1
 cd "${CURDIR}"
 
-# Create the source tarball for the Babelfish Engine
-cd "${BABELFISH_EXT_REPO}" || exit 1
-STASHID=$(git stash create)
-if [ "$STASHID" != "" ] ; then
-	BABELFISH_EXT_TAG=$STASHID
-fi
-echo "Adding Babelfish Extensions at $BABELFISH_EXT_TAG"
-for ext in common money tds tsql ; do
-	git archive --format=tar --prefix="${BABELFISH_ENG_PREFIX}/" \
-		--output="${CURDIR}/tmp/babelfishpg_${ext}.tar" \
-		"${BABELFISH_EXT_TAG}" ./contrib/babelfishpg_${ext} || exit 1
-done
 cd "${CURDIR}/tmp"
-for ext in common money tds tsql ; do
-	tar --concatenate --file ${BABELFISH_ENG_PREFIX}.tar babelfishpg_${ext}.tar
-	rm babelfishpg_${ext}.tar
-done
 echo "Compressing ${BABELFISH_ENG_PREFIX}.tar"
 bzip2 "${BABELFISH_ENG_PREFIX}.tar" || exit 1
 cd "${CURDIR}"
 
-# Run rpmbuild for the first time to create the usual packages
+# Run rpmbuild inside the container.
 podman build -t babelfishpg-eng-rpmbuild -f "${DOCKERFILE_ENG}" \
 	--build-arg CFGDIR="${CFGDIR}" \
 	--build-arg BABELFISH_ENG_PREFIX="${BABELFISH_ENG_PREFIX}" \
-	. 2>&1 | tee podman-build-engine.log
-
-# Create a container with that image and extract the Babelfish
-# Engine RPMs from that. 
-echo "Extracing RPM files"
-mkdir RPMS || exit 1
-id=$(podman create localhost/babelfishpg-eng-rpmbuild) || exit
-podman cp "${id}:/root/rpmbuild/RPMS/." ./RPMS/ || exit
-podman rm "${id}"
-
-# Run rpmbuild a second time, now including the Babelfish Extensions.
-# The container will install the RPMs built above so that the "old style"
-# Babelfish Extensions build can find pg_config
-podman build -t babelfishpg-ext-rpmbuild -f "${DOCKERFILE_EXT}" \
-	--build-arg CFGDIR="${CFGDIR}" \
-	--build-arg BABELFISH_ENG_PREFIX="${BABELFISH_ENG_PREFIX}" \
-	--build-arg BABELFISH_EXT_PREFIX="${BABELFISH_EXT_PREFIX}" \
 	--build-arg ANTLR4_JAR="${ANTLR4_JAR}" \
 	--build-arg ANTLR4_ZIP="${ANTLR4_ZIP}" \
-	. 2>&1 | tee podman-build-extensions.log
+	. 2>&1 | tee podman-build-engine.log
 
 # Create a container with that and extract the extensions RPMS
 echo "Extracing RPM files"
 rm -rf RPMS
 mkdir -p RPMS || exit 1
-id=$(podman create localhost/babelfishpg-ext-rpmbuild) || exit 1
+id=$(podman create localhost/babelfishpg-eng-rpmbuild) || exit 1
 podman cp "${id}:/root/rpmbuild/RPMS/." ./RPMS/ || exit 1
 podman rm "${id}"
 echo ""
