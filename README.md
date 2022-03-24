@@ -242,7 +242,7 @@ sudo su - postgres
 PATH=/usr/pgsql-13/bin:$PATH
 export PATH
 
-initdb || exit 1
+initdb
 
 echo ""
 echo "Creating $PGDATA/postgresql.auto.conf"
@@ -276,7 +276,7 @@ host all all 192.168.0.0/16 md5
 _EOF_
 echo ""
 
-pg_ctl start || exit 1
+pg_ctl start
 
 psql -A postgres <<_EOF_
 CREATE USER babelfish WITH CREATEDB CREATEROLE PASSWORD 'babel2';
