@@ -1,39 +1,43 @@
-diff --git a/contrib/Makefile b/contrib/Makefile
-index 13939a4fc3..caabcc1c67 100644
---- a/contrib/Makefile
-+++ b/contrib/Makefile
-@@ -54,8 +54,6 @@ SUBDIRS = \
- 		unaccent	\
- 		vacuumlo
+Submodule babelfish_extensions contains modified content
+diff --git a/babelfish_extensions/contrib/Makefile b/babelfish_extensions/contrib/Makefile
+index d7d2d09..b427975 100644
+--- a/babelfish_extensions/contrib/Makefile
++++ b/babelfish_extensions/contrib/Makefile
+@@ -4,6 +4,10 @@ ifdef USE_PGXS
+ PG_CONFIG = pg_config
+ PGXS := $(shell $(PG_CONFIG) --pgxs)
+ include $(PGXS)
++else
++subdir = babelfish_extensions/contrib
++top_builddir = ../..
++include $(top_builddir)/src/Makefile.global
+ endif
  
--SUBDIRS += babelfishpg_tsql 
--
- ifeq ($(with_openssl),yes)
- SUBDIRS += sslinfo
- else
-diff --git a/contrib/babelfishpg_common/Makefile b/contrib/babelfishpg_common/Makefile
-index b168180662..c54cd77093 100644
---- a/contrib/babelfishpg_common/Makefile
-+++ b/contrib/babelfishpg_common/Makefile
-@@ -40,14 +40,16 @@ OBJS += src/coerce.o
- ifdef USE_PGXS
+ SUBDIRS = \
+diff --git a/babelfish_extensions/contrib/babelfishpg_common/Makefile b/babelfish_extensions/contrib/babelfishpg_common/Makefile
+index 9a16c46..c84c6cd 100644
+--- a/babelfish_extensions/contrib/babelfishpg_common/Makefile
++++ b/babelfish_extensions/contrib/babelfishpg_common/Makefile
+@@ -37,8 +37,18 @@ OBJS += src/datetimeoffset.o
+ OBJS += src/sqlvariant.o
+ OBJS += src/coerce.o
+ 
++ifdef USE_PGXS
  PGXS := $(shell $(PG_CONFIG) --pgxs)
  include $(PGXS)
 +VERSION = $(shell $(PG_CONFIG) --version | awk '{print $$2}' | sed -e 's/devel$$//')
 +CFLAGS = `$(PG_CONFIG) --includedir-server`
- else
- subdir = contrib/babelfishpg_common
- top_builddir = ../..
- include $(top_builddir)/src/Makefile.global
- include $(top_srcdir)/contrib/contrib-global.mk
++else
++subdir = babelfish_extensions/contrib/babelfishpg_common
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
 +PG_SRC=$(top_srcdir)
- endif
++endif
  
--
  MODULEPATH = $$libdir/$(EXTENSION)-$(BBFPGCMN_MAJOR_VERSION)
  
- UPGRADES = $(patsubst sql/upgrades/%.sql,sql/%.sql,$(wildcard sql/upgrades/*.sql))
-@@ -62,8 +64,7 @@ DATA_built = \
+@@ -54,8 +64,7 @@ DATA_built = \
  
  #include ../Makefile.common
  
@@ -43,7 +47,7 @@ index b168180662..c54cd77093 100644
  MAJORVER 	 = $(shell echo $(VERSION) | cut -d . -f1,2 | tr -d .)
  
  # Function for testing a condition
-@@ -71,9 +72,6 @@ test		 = $(shell test $(1) $(2) $(3) && echo yes || echo no)
+@@ -63,9 +72,6 @@ test		 = $(shell test $(1) $(2) $(3) && echo yes || echo no)
  
  GE91		 = $(call test, $(MAJORVER), -ge, 91)
  
@@ -53,7 +57,7 @@ index b168180662..c54cd77093 100644
  ifeq ($(GE91),yes)
  all: sql/$(EXTENSION)--$(EXTVERSION).sql $(UPGRADES)
  endif
-@@ -91,7 +89,4 @@ sql/$(EXTENSION)--$(EXTVERSION).sql: sql/$(EXTENSION).in
+@@ -83,7 +89,4 @@ sql/$(EXTENSION)--$(EXTVERSION).sql: sql/$(EXTENSION).in
  sql/%.sql: sql/upgrades/%.sql
  	cp $< $@
  
@@ -61,53 +65,51 @@ index b168180662..c54cd77093 100644
 -CFLAGS = `$(PG_CONFIG) --includedir-server`
 -
  $(recurse)
-diff --git a/contrib/babelfishpg_money/Makefile b/contrib/babelfishpg_money/Makefile
-index 07c719d3c4..85281c2b1a 100755
---- a/contrib/babelfishpg_money/Makefile
-+++ b/contrib/babelfishpg_money/Makefile
-@@ -3,25 +3,13 @@ OBJS = fixeddecimal.o
+diff --git a/babelfish_extensions/contrib/babelfishpg_money/Makefile b/babelfish_extensions/contrib/babelfishpg_money/Makefile
+index 2dcd692..487b4bf 100755
+--- a/babelfish_extensions/contrib/babelfishpg_money/Makefile
++++ b/babelfish_extensions/contrib/babelfishpg_money/Makefile
+@@ -3,37 +3,38 @@ OBJS = fixeddecimal.o
  
  EXTENSION = babelfishpg_money
  
 -#subdir = contrib/babelfishpg_money
-+subdir = contrib/babelfishpg_money
- 
+-
  DATA = fixeddecimal--1.0.0--1.1.0.sql
  DATA_built = babelfishpg_money--1.1.0.sql
  
 -#include ../Makefile.common
 -
 -CFLAGS = `$(PG_CONFIG) --includedir-server`
--
--TESTS = $(wildcard test/sql/*.sql)
--
++ifdef USE_PGXS
++VERSION = $(shell $(PG_CONFIG) --version)
++PGXS := $(shell $(PG_CONFIG) --pgxs)
++include $(PGXS)
++else
++subdir = babelfish_extensions/contrib/babelfishpg_money
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++endif
+ 
+ TESTS = $(wildcard test/sql/*.sql)
+ 
 -REGRESS_BRIN := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL 9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]" && echo brin-xl)
 -REGRESS_BRIN += $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -E "9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]" | grep -qEv "XL" && echo brin)
 -REGRESS_VERSION_SPECIFIC := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL" && echo index-xl || echo index)
--REGRESS = $(shell echo aggregate cast comparison overflow $(REGRESS_BRIN) $(REGRESS_VERSION_SPECIFIC))
--
--REGRESS_OPTS = --inputdir=test --outputdir=test --load-extension=babelfishpg_money
--
- ifdef USE_PGXS
-+VERSION = $(shell $(PG_CONFIG) --version)
- PGXS := $(shell $(PG_CONFIG) --pgxs)
- include $(PGXS)
- else
-@@ -31,15 +19,24 @@ include $(top_builddir)/src/Makefile.global
- include $(top_srcdir)/contrib/contrib-global.mk
- endif
++REGRESS_BRIN := $(shell echo $(VERSION) | grep -qE "XL 9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" && echo brin-xl)
++REGRESS_BRIN += $(shell echo $(VERSION) | grep -E "9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" | grep -qEv "XL" && echo brin)
++REGRESS_VERSION_SPECIFIC := $(shell echo $(VERSION) | grep -qE "XL" && echo index-xl || echo index)
+ REGRESS = $(shell echo aggregate cast comparison overflow $(REGRESS_BRIN) $(REGRESS_VERSION_SPECIFIC))
  
+ REGRESS_OPTS = --inputdir=test --outputdir=test --load-extension=babelfishpg_money
+ 
+-#PG_CONFIG = pg_config
+-PGXS := $(shell $(PG_CONFIG) --pgxs)
+-include $(PGXS)
+-
 -AGGSTATESQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL" && echo fixeddecimalaggstate.sql)
 -AGGFUNCSSQL := $(shell LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(PG_CONFIG) --version | grep -qE "XL" && echo fixeddecimal--xlaggs.sql)
-+TESTS = $(wildcard test/sql/*.sql)
-+
-+REGRESS_BRIN := $(shell cho $(VERSION) | grep -qE "XL 9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" && echo brin-xl)
-+REGRESS_BRIN += $(shell cho $(VERSION) | grep -E "9\.[5-9]| 10\.0| 11\.[0-9]| 12\.[0-9]| 13\.[0-9]" | grep -qEv "XL" && echo brin)
-+REGRESS_VERSION_SPECIFIC := $(shell echo $(VERSION) | grep -qE "XL" && echo index-xl || echo index)
-+REGRESS = $(shell echo aggregate cast comparison overflow $(REGRESS_BRIN) $(REGRESS_VERSION_SPECIFIC))
-+
-+REGRESS_OPTS = --inputdir=test --outputdir=test --load-extension=babelfishpg_money
-+
 +AGGSTATESQL := $(shell echo $(VERSION) | grep -qE "XL" && echo fixeddecimalaggstate.sql)
 +AGGFUNCSSQL := $(shell echo $(VERSION) | grep -qE "XL" && echo fixeddecimal--xlaggs.sql)
  
@@ -123,68 +125,82 @@ index 07c719d3c4..85281c2b1a 100755
  
  OBJECTS := $(addprefix $(srcdir)/, $(AGGSTATESQL) $(BASESQL) $(AGGFUNCSSQL) $(BRINSQL))
  
-diff --git a/contrib/babelfishpg_tds/Makefile b/contrib/babelfishpg_tds/Makefile
-index 9ce8ba73f9..d755e9b159 100644
---- a/contrib/babelfishpg_tds/Makefile
-+++ b/contrib/babelfishpg_tds/Makefile
+diff --git a/babelfish_extensions/contrib/babelfishpg_tds/Makefile b/babelfish_extensions/contrib/babelfishpg_tds/Makefile
+index 9ccf744..5df4482 100644
+--- a/babelfish_extensions/contrib/babelfishpg_tds/Makefile
++++ b/babelfish_extensions/contrib/babelfishpg_tds/Makefile
 @@ -10,6 +10,9 @@ tds_backend = $(tds_top_dir)/src/backend
  tds_include = $(tds_top_dir)/src/include
  TSQL_SRC = ../babelfishpg_tsql
  
 +ifndef USE_PGXS
-+PG_SRC = ../..
++PG_SRC = ../../..
 +endif
  PG_CPPFLAGS += -I$(TSQL_SRC) -I$(PG_SRC) -I$(tds_top_dir) -DFAULT_INJECTOR
  
  # Exclude the following files from the build (sometimes these
-diff --git a/contrib/babelfishpg_tsql/Makefile b/contrib/babelfishpg_tsql/Makefile
-index e99f5ca3e1..f01eebe09b 100644
---- a/contrib/babelfishpg_tsql/Makefile
-+++ b/contrib/babelfishpg_tsql/Makefile
-@@ -74,7 +74,11 @@ PG_CXXFLAGS += -Wno-undef -Wall -Wcpp
+@@ -28,11 +31,15 @@ $(tds_include)/error_mapping.h: error_mapping.txt generate_error_mapping.pl
+ 	$(PERL) generate_error_mapping.pl $< > $@
+ $(tds_backend)/tds/err_handler.o: $(tds_include)/error_mapping.h
+ 
+-# Disable for now
+-#NO_PGXS = 1
+-
++ifdef USE_PGXS
+ PGXS := $(shell $(PG_CONFIG) --pgxs)
+ include $(PGXS)
++else
++subdir = babelfish_extensions/contrib/babelfishpg_tds
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++endif
+ 
+ #include ../Makefile.common
+ 
+diff --git a/babelfish_extensions/contrib/babelfishpg_tsql/Makefile b/babelfish_extensions/contrib/babelfishpg_tsql/Makefile
+index 0534345..152e5b9 100644
+--- a/babelfish_extensions/contrib/babelfishpg_tsql/Makefile
++++ b/babelfish_extensions/contrib/babelfishpg_tsql/Makefile
+@@ -76,6 +76,9 @@ PG_CXXFLAGS += -Wno-undef -Wall -Wcpp
  PG_CXXFLAGS += -Wno-register # otherwise C++17 gags on PostgreSQL headers
  PG_CXXFLAGS += -I$(ANTLR4_RUNTIME_INCLUDE_DIR)
  PG_CFLAGS += -g
 +ifndef USE_PGXS
-+PG_SRC = ../..
++PG_SRC = ../../..
 +endif
  PG_CPPFLAGS += -I$(TSQLSRC) -I$(PG_SRC) -DFAULT_INJECTOR
-+PG_CPPFLAGS += -I/usr/local/include/antlr4-runtime
  
  SHLIB_LINK += -L$(ANTLR4_RUNTIME_LIB_DIR) $(ANTLR4_RUNTIME_LIB) -lcrypto
- 
-@@ -91,16 +95,8 @@ DATA_built = \
+@@ -108,8 +111,16 @@ DATA_built = \
  
  #include ../Makefile.common
  
 -# Get Postgres version, as well as major (9.4, etc) version. Remove '.' from MAJORVER.
--VERSION 	 = $(shell $(PG_CONFIG) --version | awk '{print $$2}' | sed -e 's/devel$$//')
--MAJORVER 	 = $(shell echo $(VERSION) | cut -d . -f1,2 | tr -d .)
--
--# Function for testing a condition
--test		 = $(shell test $(1) $(2) $(3) && echo yes || echo no)
--
--GE91		 = $(call test, $(MAJORVER), -ge, 91)
--
- ifdef USE_PGXS
-+VERSION 	 = $(shell $(PG_CONFIG) --version | awk '{print $$2}' | sed -e 's/devel$$//')
- PGXS := $(shell $(PG_CONFIG) --pgxs)
- include $(PGXS)
- else
-@@ -109,6 +105,12 @@ top_builddir = ../..
- include $(top_builddir)/src/Makefile.global
- include $(top_srcdir)/contrib/contrib-global.mk
- endif
-+MAJORVER 	 = $(shell echo $(VERSION) | cut -d . -f1,2 | tr -d .)
-+
-+# Function for testing a condition
-+test		 = $(shell test $(1) $(2) $(3) && echo yes || echo no)
-+
-+GE91		 = $(call test, $(MAJORVER), -ge, 91)
++ifdef USE_PGXS
+ VERSION 	 = $(shell $(PG_CONFIG) --version | awk '{print $$2}' | sed -e 's/devel$$//')
++PGXS := $(shell $(PG_CONFIG) --pgxs)
++include $(PGXS)
++else
++subdir = babelfish_extensions/contrib/babelfishpg_tsql
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++endif
+ MAJORVER 	 = $(shell echo $(VERSION) | cut -d . -f1,2 | tr -d .)
  
+ # Function for testing a condition
+@@ -117,9 +128,6 @@ test		 = $(shell test $(1) $(2) $(3) && echo yes || echo no)
+ 
+ GE91		 = $(call test, $(MAJORVER), -ge, 91)
+ 
+-PGXS := $(shell $(PG_CONFIG) --pgxs)
+-include $(PGXS)
+-
  ifeq ($(GE91),yes)
  all: sql/$(EXTENSION)--$(EXTVERSION).sql $(UPGRADES)
-@@ -144,12 +146,15 @@ GEN_KEYWORDLIST = $(PERL) -I $(TOOLSDIR) $(TOOLSDIR)/gen_keywordlist.pl
+ endif
+@@ -154,8 +162,11 @@ GEN_KEYWORDLIST = $(PERL) -I $(TOOLSDIR) $(TOOLSDIR)/gen_keywordlist.pl
  GEN_KEYWORDLIST_DEPS = $(TOOLSDIR)/gen_keywordlist.pl $(TOOLSDIR)/PerfectHash.pm
  TSQLSRC = .
  
@@ -197,8 +213,3 @@ index e99f5ca3e1..f01eebe09b 100644
  
  .PHONY: antlr/libantlr_tsql.a  # to allow CMake's make check the build
  antlr/libantlr_tsql.a: antlr/Makefile
--	$(MAKE) -C $(@D) all
-+	CFLAGS="$(shell echo $(CFLAGS) | sed -e 's/-fexcess-precision=[^ ]*//' -e 's/-Wmissing-prototypes//' -e 's/-Wdeclaration-after-statement//')" $(MAKE) -C $(@D) all
- 
- # See notes in src/backend/parser/Makefile about the following two rules
- src/pl_gram.h: src/pl_gram.c

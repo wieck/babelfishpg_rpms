@@ -19,7 +19,10 @@ This repository provides scripts, configuration files and patches
 to build binary RPM files of **Babelfish for PostgreSQL**. 
 
 In this **first version for discussion** the only build target is
-Babelfish 1.1.0 (PG 13.5) on RedHat EL-8 systems (like CentOS and
+branch BABEL_1_X_DEV__PG_13_6 of the main engine (repository
+`postgresql_modified_for_babelfish`) and branch BABEL_1_X_DEV of
+the extensions (repository `babelfish_extensions)
+on RedHat EL-8 systems (like CentOS and
 Rocky Linux). The directory structure of config and patch files is
 however set up to support other OS and Babelfish versions in the
 future.
@@ -39,19 +42,26 @@ Preparing the build environment
 ----------------------------
 
 The only tools needed on the build host are git, tar, bzip2 and
-podman. Everything else is happening in docker/podman containers,
+podman. Everything else is happening in a docker/podman container,
 so the host environment is rather irrelevant. To install the tools
 run
 ```
 sudo dnf install -y git tar bzip2 podman
 ```
 
-Next we need to clone this repository and initialize the submodules
+Next we need to clone this repository as well as the
+postgresql_modified_for_babelfish repository.
+
+**NOTE: Currently the following uses clone repositories that have open pull
+requests needed for all of this to work. This will be fixed once
+those PRs are merged.**
 ```
 cd $HOME
-git clone https://github.com/wieck/babelfishpg_rpms.git
-cd babelfishpg_rpms
+git clone https://github.com/wieck/postgresql_modified_for_babelfish.git
+cd postgresql_modified_for_babelfish
 git submodule update --init
+cd ..
+git clone https://github.com/wieck/babelfishpg_rpms.git
 ```
 
 Running the build script
@@ -74,22 +84,11 @@ The build script will perform the following actions:
   specified in the config file (./files/babelfishpg13/EL-8/build.conf).
   This is only done if the download files don't exist.
 
-* Create the `git archive` tarball files of the submodules 
-  `babelfishpg_enging` and `babelfishpg_extensions` in *./tmp*. These
-  are the source tarballs to be used later by the `rpmbuild` commamd
-  inside the docker/podman containers. The git tags to use are specified
+* Create the `babelfishpg13 tarball` file of the postgresql_modified_for_babelfish
+  repository cloned above in `tmp`. This is the
+  source tarball to be used later by the `rpmbuild` commamd
+  inside the docker/podman container. The git tags to use are specified
   in the config file.
-
-  **Note:**
-  *babelfishpg_engine* is actually a submodule cloned from
-  the official AWS repository
-  https://github.com/babelfish-for-postgresql/postgresql_modified_for_babelfish.git
-  and *babelfishpg_extensions* is the official
-  https://github.com/babelfish-for-postgresql/babelfish_extensions.git
-  repository. I added these submodules under these local names
-  because I strongly believe that repositories,
-  that are separate but only together represent one product, should have
-  at least a common name prefix.
 
 * Run `podman build` with the *Dockerfile.engine* found in the same
   directory as the config file. This will create a docker/podman image
@@ -101,27 +100,6 @@ The build script will perform the following actions:
 
 * Create a container based on that image, extract the built RPM files
   into *./RPMS* and delete the container.
-
-* Run `podman build` with the *Dockerfile.extensions* found in the same
-  directory as the config file. This will create another docker/podman
-  image similar to the above. There are extra steps in this build process
-  to install the engine using the RPMs created in the previous steps,
-  build the Antlr4 C++ runtime library and extracting the engine's
-  source tree because the extension building cannot run based on the
-  -devel package alone. Finally `rpmbuild` is run with
-  the *babelfishpg-extensions.spec* file this time
-
-  **Note: This part of the build process needs some attention.
-  Ideally the Babelfish Extensions could be built inside of the
-  actual Babelfish Engine source tree and just generate another
-  package.**
-
-* Create a container based on the *localhost/babelfishpg-ext-rpmbuild*
-  image, extract the RPMs and delete the container.
-
-The entire process can take considerable time. For example using a
-CentOS-8-Stream VM with 4 VCPUs and 16GB memory on top of NVMe takes
-about 27 minutes.
 
 The end result should look similar to this:
 ```
@@ -172,7 +150,7 @@ the repository itself by running
 ```
 sudo dnf install -y createrepo
 sudo mkdir -p /usr/local/share/babelfishpg/$(uname -m)
-sudo cp -R RPMS /usr/local/share/babelfishpg/$(uname -m)/
+sudo cp RPMS/$(uname -m)/* /usr/local/share/babelfishpg/$(uname -m)
 sudo createrepo /usr/local/share/babelfishpg/$(uname -m)
 ```
 
@@ -226,6 +204,9 @@ Looks pretty good to me.
 Installing Babelfish
 --------------------
 
+**NOTE: If you previously installed postgresql13 packages on this host
+they need to be uninstalled first.**
+
 Installing **Babelfish for PostgreSQL** from the file based repository
 is fairly simple from here. All we have to do is to copy the
 */usr/local/share/babelfishpg* directory and
@@ -267,9 +248,23 @@ echo ""
 echo "Creating $PGDATA/postgresql.auto.conf"
 cat >/$PGDATA/postgresql.auto.conf <<_EOF_
 listen_addresses = '*'
+max_connections = 256
+shared_buffers = 16GB
+work_mem = 16MB
+maintenance_work_mem = 64MB
+wal_level = logical
+checkpoint_timeout = 10min
+max_wal_size = 64GB
+min_wal_size = 16GB
+checkpoint_completion_target = 0.9
+checkpoint_warning = 5min
+tcp_keepalives_idle = 57
+tcp_keepalives_interval = 7
+tcp_keepalives_count = 9
 shared_preload_libraries = 'babelfishpg_tds'
 babelfishpg_tsql.database_name = 'babelfish'
 babelfishpg_tsql.migration_mode = 'multi-db'
+babelfishpg_tds.tds_debug_log_level = 0
 _EOF_
 
 echo "Adding private networks to $PGDATA/pg_hba.conf"
@@ -330,15 +325,15 @@ to connect as Babelfish currently does not support encryption of the TDS
 Login handshake. The installation procedure for that is documented
 [here](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15#17).
 ```
-$ sqlcmd -S pghost -U babelfish -P babel2
+$ sqlcmd -S mybabelhost -U babelfish -P babel2
 1> select version();
 2> go
 version
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Babelfish for PostgreSQL with SQL Server Compatibility - 12.0.2000.8
-Feb 28 2022 03:06:31
+Mar 24 2022 17:30:05
 Copyright (c) Amazon Web Services
-PostgreSQL 13.5 Babelfish for PostgreSQL on x86_64-pc-linux-gnu
+PostgreSQL 13.6 Babelfish for PostgreSQL on x86_64-pc-linux-gnu
 
 (1 rows affected)
 1>

@@ -9,8 +9,8 @@ BASEURL=/usr/local/share/babelfishpg/$(uname -m)
 
 for host in $@ ; do
 	ssh root@$host dnf install -y createrepo
-    ssh root@$host mkdir -p ${BASEURL}
-	scp -r RPMS root@$host:${BASEURL}/
+	ssh root@$host mkdir -p ${BASEURL}
+	scp RPMS/$(uname -m)/* root@$host:${BASEURL}/
 	ssh root@$host createrepo ${BASEURL}
 	ssh root@$host cat \>/etc/yum.repos.d/babelfishpg.repo <<_EOF_
 [babelfishpg]

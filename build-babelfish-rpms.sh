@@ -48,20 +48,14 @@ else
 fi
 
 # Create the source tarball for the Babelfish Engine
+echo "Creating Babelfish Engine tarball from ${BABELFISH_ENG_REPO}@${BABELFISH_ENG_TAG}"
 cd "${BABELFISH_ENG_REPO}" || exit 1
-STASHID=$(git stash create)
-if [ "$STASHID" != "" ] ; then
-	BABELFISH_ENG_TAG=$STASHID
-fi
-echo "Creating Babelfish Engine tarball at $BABELFISH_ENG_TAG"
-git archive --format=tar --prefix="${BABELFISH_ENG_PREFIX}/" \
-	--output="${CURDIR}/tmp/${BABELFISH_ENG_PREFIX}.tar" \
-	"${BABELFISH_ENG_TAG}" || exit 1
-cd "${CURDIR}"
-
-cd "${CURDIR}/tmp"
-echo "Compressing ${BABELFISH_ENG_PREFIX}.tar"
-bzip2 "${BABELFISH_ENG_PREFIX}.tar" || exit 1
+git checkout ${BABELFISH_ENG_TAG} || exit 1
+cd babelfish_extensions || exit 1
+git checkout ${BABELFISH_EXT_TAG} || exit 1
+cd ..
+(git ls-files && cd babelfish_extensions && git ls-files | sed -e 's|^|babelfish_extensions/|') | \
+	tar cjf "${CURDIR}/tmp/${BABELFISH_ENG_PREFIX}.tar.bz2" -T- --transform "s|^|${BABELFISH_ENG_PREFIX}/|"
 cd "${CURDIR}"
 
 # Run rpmbuild inside the container.

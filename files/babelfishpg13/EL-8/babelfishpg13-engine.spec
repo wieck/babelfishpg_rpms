@@ -4,7 +4,7 @@
 %global pgpackageversion 13
 %global prevmajorversion 12
 %global babelfishversion 1.1.0
-%global pgversion 13.5
+%global pgversion 13.6
 %global sname babelfishpg
 %global pgname postgresql
 %global pgbaseinstdir	/usr/pgsql-%{pgpackageversion}
@@ -114,7 +114,7 @@ Patch5:		%{pgname}-%{pgmajorversion}-var-run-socket.patch
 Patch6:		%{pgname}-%{pgmajorversion}-perl-rpath.patch
 
 Patch42:	%{sname}%{pgmajorversion}-extensions.patch
-Patch43:	%{sname}%{pgmajorversion}-makefiles.patch
+#Patch43:	%{sname}%{pgmajorversion}-makefiles.patch
 
 BuildRequires:	perl glibc-devel bison flex >= 2.5.31
 BuildRequires:	perl(ExtUtils::MakeMaker)
@@ -609,7 +609,7 @@ benchmarks.
 %patch6 -p0
 
 %patch42 -p1
-%patch43 -p1
+#%patch43 -p1
 
 %build
 
@@ -751,7 +751,8 @@ sed "s|C=\`pwd\`;|C=%{pgbaseinstdir}/lib/tutorial;|" < src/tutorial/Makefile > s
 
 %{__mkdir} -p %{buildroot}%{pgbaseinstdir}/share/extensions/
 MAKELEVEL=0 %{__make} %{?_smp_mflags} all
-%{__make} %{?_smp_mflags} -j1 -C contrib all
+%{__make} %{?_smp_mflags} -C contrib all
+%{__make} %{?_smp_mflags} -j1 -C babelfish_extensions/contrib all
 %if %uuid
 %{__make} %{?_smp_mflags} -C contrib/uuid-ossp all
 %endif
@@ -810,6 +811,7 @@ run_testsuite()
 
 %{__mkdir} -p %{buildroot}%{pgbaseinstdir}/share/extensions/
 %{__make} -C contrib DESTDIR=%{buildroot} install
+%{__make} -C babelfish_extensions/contrib DESTDIR=%{buildroot} install
 %if %uuid
 %{__make} -C contrib/uuid-ossp DESTDIR=%{buildroot} install
 %endif
